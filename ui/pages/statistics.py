@@ -151,10 +151,10 @@ class StatisticsPage(QWidget):
             self.card_top_category.update_data(
                 top_cat["category_name"],
                 subtitle=f"{top_cat['amount']:,.2f} {currency} ({top_cat['percentage']:.1f}%)",
-                value_color=COLORS.EXPENSE,
+                value_role="expense",
             )
         else:
-            self.card_top_category.update_data("None", subtitle="No expenses recorded", value_color=COLORS.GOLD)
+            self.card_top_category.update_data("None", subtitle="No expenses recorded", value_role="gold")
 
         # 2. 12-Month Bar Chart
         history = self.service.get_monthly_history(limit_months=12)
@@ -165,18 +165,18 @@ class StatisticsPage(QWidget):
             avg_exp = total_exp / len(history)
             net_accum = sum(h["net"] for h in history)
 
-            self.card_avg_expense.update_data(f"{avg_exp:,.2f} {currency}", subtitle=f"Calculated across {len(history)} months")
-            net_col = COLORS.INCOME if net_accum >= 0 else COLORS.EXPENSE
+            self.card_avg_expense.update_data(f"{avg_exp:,.2f} {currency}", subtitle=f"Calculated across {len(history)} months", value_role="primary")
             sign = "+" if net_accum >= 0 else ""
-            self.card_net_accumulated.update_data(f"{sign}{net_accum:,.2f} {currency}", value_color=net_col)
+            self.card_net_accumulated.update_data(f"{sign}{net_accum:,.2f} {currency}", value_role="income" if net_accum >= 0 else "expense")
 
         # 3. Cumulative Balance Series
         series = self.service.get_cumulative_balance_series(limit_months=12)
         self.cumulative_chart.set_data(series, currency)
 
     def apply_theme(self) -> None:
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        p = ThemeManager.get_palette()
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
         self.card_top_category.apply_theme()
         self.card_avg_expense.apply_theme()
         self.card_net_accumulated.apply_theme()

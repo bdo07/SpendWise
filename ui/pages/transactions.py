@@ -82,13 +82,11 @@ class TransactionTableModel(QAbstractTableModel):
             return int(Qt.AlignLeft | Qt.AlignVCenter)
 
         elif role == Qt.ForegroundRole:
-            if col == 4:
-                hex_color = COLORS.INCOME if tx.type == "income" else COLORS.EXPENSE
+            p = ThemeManager.get_palette()
+            if col in (1, 4):
+                hex_color = p.income if tx.type == "income" else p.expense
                 return QColor(hex_color)
-            elif col == 1:
-                hex_color = COLORS.INCOME if tx.type == "income" else COLORS.EXPENSE
-                return QColor(hex_color)
-            return QColor(ThemeManager.get_text_primary())
+            return QColor(p.text_primary)
 
         elif role == Qt.FontRole:
             if col in (1, 4):
@@ -392,16 +390,17 @@ class TransactionsPage(QWidget):
 
     def apply_theme(self) -> None:
         """Refresh container styling."""
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
 
         self.setStyleSheet(f"""
             QFrame#FilterCard {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 10px;
             }}
         """)
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
+        self.lbl_count.setStyleSheet(f"color: {p.text_secondary};")
+        self.table_model.layoutChanged.emit()
 

@@ -113,10 +113,10 @@ class DashboardPage(QWidget):
         kpi_layout = QHBoxLayout()
         kpi_layout.setSpacing(16)
 
-        self.card_balance = StatCard("Net Monthly Savings", "0.00 MAD", "Income minus expenses")
-        self.card_income = StatCard("Total Income", "0.00 MAD", "Received this month", value_color=COLORS.INCOME)
-        self.card_expenses = StatCard("Total Expenses", "0.00 MAD", "Spent this month", value_color=COLORS.EXPENSE)
-        self.card_savings_rate = StatCard("Savings Rate", "0.0%", "Of total income saved")
+        self.card_balance = StatCard("Net Monthly Savings", "0.00 MAD", "Income minus expenses", value_role="income")
+        self.card_income = StatCard("Total Income", "0.00 MAD", "Received this month", value_role="income")
+        self.card_expenses = StatCard("Total Expenses", "0.00 MAD", "Spent this month", value_role="expense")
+        self.card_savings_rate = StatCard("Savings Rate", "0.0%", "Of total income saved", value_role="gold")
 
         kpi_layout.addWidget(self.card_balance)
         kpi_layout.addWidget(self.card_income)
@@ -237,18 +237,19 @@ class DashboardPage(QWidget):
         summary = self.service.get_monthly_summary(self.current_month)
 
         # Update KPI Cards
+        p = ThemeManager.get_palette()
         net_prefix = "+" if summary.net_savings >= 0 else ""
-        net_color = COLORS.INCOME if summary.net_savings >= 0 else COLORS.EXPENSE
+        net_role = "income" if summary.net_savings >= 0 else "expense"
         self.card_balance.update_data(
             f"{net_prefix}{summary.net_savings:,.2f} {currency}",
             subtitle=f"{summary.transaction_count} transactions recorded",
-            value_color=net_color,
+            value_role=net_role,
         )
-        self.card_income.update_data(f"+{summary.income:,.2f} {currency}")
-        self.card_expenses.update_data(f"-{summary.expenses:,.2f} {currency}")
+        self.card_income.update_data(f"+{summary.income:,.2f} {currency}", value_role="income")
+        self.card_expenses.update_data(f"-{summary.expenses:,.2f} {currency}", value_role="expense")
         self.card_savings_rate.update_data(
             f"{summary.savings_rate:.1f}%",
-            value_color=COLORS.GOLD,
+            value_role="gold",
         )
 
         # Check Active Budget Alerts for Banner
@@ -260,21 +261,21 @@ class DashboardPage(QWidget):
             if level in ("critical", "exceeded"):
                 self.alert_banner.setStyleSheet(f"""
                     QFrame#AlertBanner {{
-                        background-color: {COLORS.EXPENSE_LIGHT if not ThemeManager.is_dark() else '#2B1414'};
-                        border: 1.5px solid {COLORS.EXPENSE};
+                        background-color: {p.expense_surface};
+                        border: 1.5px solid {p.expense};
                         border-radius: 8px;
                     }}
                 """)
-                self.lbl_alert_text.setStyleSheet(f"color: {COLORS.EXPENSE};")
+                self.lbl_alert_text.setStyleSheet(f"color: {p.expense};")
             else:
                 self.alert_banner.setStyleSheet(f"""
                     QFrame#AlertBanner {{
-                        background-color: {COLORS.WARNING_LIGHT if not ThemeManager.is_dark() else '#2B210F'};
-                        border: 1.5px solid {COLORS.WARNING};
+                        background-color: {p.warning_surface};
+                        border: 1.5px solid {p.warning};
                         border-radius: 8px;
                     }}
                 """)
-                self.lbl_alert_text.setStyleSheet(f"color: {COLORS.WARNING};")
+                self.lbl_alert_text.setStyleSheet(f"color: {p.warning};")
             self.alert_banner.setVisible(True)
         else:
             self.alert_banner.setVisible(False)
@@ -292,7 +293,6 @@ class DashboardPage(QWidget):
                 f"You have used {overall_status.percentage:.1f}% of your {overall_status.budget.amount:,.2f} {currency} total budget."
             )
         else:
-            # Fallback to sum of expenses vs sum of category budgets
             exp_total = summary.expenses
             self.overall_budget_bar.update_values(
                 "Overall Monthly Limit (Not Configured)",
@@ -310,24 +310,20 @@ class DashboardPage(QWidget):
         recent = self.service.tx_repo.get_recent(limit=5)
         self.table_recent.setRowCount(len(recent))
         for row, tx in enumerate(recent):
-            # Date
             item_date = QTableWidgetItem(tx.date)
             item_date.setFont(ThemeManager.font_sans(size=9))
             self.table_recent.setItem(row, 0, item_date)
 
-            # Category
             item_cat = QTableWidgetItem(tx.category_name or "General")
             item_cat.setFont(ThemeManager.font_sans(size=9, bold=True))
             self.table_recent.setItem(row, 1, item_cat)
 
-            # Description
             item_desc = QTableWidgetItem(tx.description or "—")
             item_desc.setFont(ThemeManager.font_sans(size=9))
             self.table_recent.setItem(row, 2, item_desc)
 
-            # Amount
             sign = "+" if tx.type == "income" else "-"
-            color = COLORS.INCOME if tx.type == "income" else COLORS.EXPENSE
+            color = p.income if tx.type == "income" else p.expense
             item_amt = QTableWidgetItem(f"{sign}{tx.amount:,.2f} {currency}")
             item_amt.setFont(ThemeManager.font_sans(size=9, bold=True))
             item_amt.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -336,18 +332,17 @@ class DashboardPage(QWidget):
 
     def apply_theme(self) -> None:
         """Refresh styling on theme toggle."""
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
 
         self.setStyleSheet(f"""
             QFrame#Card {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.lbl_welcome.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        self.lbl_welcome.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
 
         self.card_balance.apply_theme()
         self.card_income.apply_theme()
@@ -355,3 +350,4 @@ class DashboardPage(QWidget):
         self.card_savings_rate.apply_theme()
         self.overall_budget_bar.apply_theme()
         self.donut_chart.apply_theme()
+        self.refresh_data()

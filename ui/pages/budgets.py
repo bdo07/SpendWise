@@ -437,9 +437,10 @@ class BudgetsPage(QWidget):
                 lbl_g_name.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
 
                 pct = g.progress_percentage
+                p = ThemeManager.get_palette()
                 lbl_g_val = QLabel(f"{g.saved_amount:,.2f} / {g.target_amount:,.2f} {currency} ({pct:.1f}%)")
                 lbl_g_val.setFont(ThemeManager.font_sans(size=10))
-                lbl_g_val.setStyleSheet(f"color: {COLORS.INCOME if g.is_completed else ThemeManager.get_text_secondary()};")
+                lbl_g_val.setStyleSheet(f"color: {p.income if g.is_completed else p.text_secondary};")
 
                 top.addWidget(lbl_g_name)
                 top.addStretch()
@@ -455,12 +456,12 @@ class BudgetsPage(QWidget):
                 pbar.setFixedHeight(8)
                 pbar.setStyleSheet(f"""
                     QProgressBar {{
-                        background-color: {ThemeManager.get_border_color()};
+                        background-color: {p.border};
                         border: none;
                         border-radius: 4px;
                     }}
                     QProgressBar::chunk {{
-                        background-color: {COLORS.INCOME if g.is_completed else COLORS.GOLD};
+                        background-color: {p.income if g.is_completed else p.gold};
                         border-radius: 4px;
                     }}
                 """)
@@ -574,16 +575,16 @@ class BudgetsPage(QWidget):
             show_toast(self, "Savings goal removed.", level="info")
 
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
 
         self.setStyleSheet(f"""
             QFrame#Card {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
+        self.reload_data()
 
