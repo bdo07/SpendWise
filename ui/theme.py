@@ -95,15 +95,15 @@ class ThemeManager:
     @staticmethod
     def font_serif(size: int = 14, bold: bool = False) -> QFont:
         font = QFont("Georgia")
-        font.setFamilies(["Georgia", "Playfair Display", "Times New Roman", "serif"])
+        font.setFamilies(["Georgia", "Times New Roman", "serif"])
         font.setPointSize(size)
         font.setBold(bold)
         return font
 
     @staticmethod
     def font_sans(size: int = 10, bold: bool = False) -> QFont:
-        font = QFont()
-        font.setFamilies(["-apple-system", "SF Pro Text", "Helvetica Neue", "Segoe UI", "Inter", "Arial", "sans-serif"])
+        font = QFont("Helvetica Neue")
+        font.setFamilies(["Helvetica Neue", "Arial", "sans-serif"])
         font.setPointSize(size)
         font.setBold(bold)
         return font
@@ -142,7 +142,7 @@ class ThemeManager:
         return f"""
         /* ---------------- Global Reset ---------------- */
         QWidget {{
-            font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             font-size: 13px;
             color: {text_primary};
         }}

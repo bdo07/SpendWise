@@ -118,8 +118,8 @@ class CategoryDonutChart(QFrame):
             pie_slice.setBorderColor(QColor(ThemeManager.get_card_color()))
             pie_slice.setBorderWidth(2)
 
-            # Tooltip
-            pie_slice.setToolTip(f"{name}: {amt:,.2f} {currency} ({pct:.1f}%)")
+            # Highlight slice slightly when hovered
+            pie_slice.hovered.connect(lambda state, s=pie_slice: s.setExploded(state))
 
         self.chart.addSeries(series)
 

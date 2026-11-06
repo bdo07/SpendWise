@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Callable, Optional
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -330,9 +331,6 @@ class DashboardPage(QWidget):
             item_amt = QTableWidgetItem(f"{sign}{tx.amount:,.2f} {currency}")
             item_amt.setFont(ThemeManager.font_sans(size=9, bold=True))
             item_amt.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            item_amt.setForeground(ThemeManager.get_text_primary())
-            # We can tint cell text
-            from PySide6.QtGui import QColor
             item_amt.setForeground(QColor(color))
             self.table_recent.setItem(row, 3, item_amt)
 
