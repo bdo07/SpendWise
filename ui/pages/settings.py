@@ -372,8 +372,9 @@ class SettingsPage(QWidget):
         # Theme
         self.combo_theme = QComboBox()
         self.combo_theme.setFixedHeight(36)
-        self.combo_theme.addItem("Light Theme (Cream & White Cards)", "light")
-        self.combo_theme.addItem("Dark Theme (Midnight Navy & Slate)", "dark")
+        self.combo_theme.addItem("System Theme (Follow OS)", "system")
+        self.combo_theme.addItem("Light Theme (Cream & Gold)", "light")
+        self.combo_theme.addItem("Dark Theme (Midnight & Gold)", "dark")
         theme_val = self.service.get_theme()
         t_idx = self.combo_theme.findData(theme_val)
         if t_idx >= 0:
