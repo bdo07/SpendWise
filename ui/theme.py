@@ -57,6 +57,34 @@ class Palette:
     row_alt: str            # Table alternating row color
     table_header_bg: str    # Table header background
 
+    @property
+    def GOLD(self) -> str:
+        return self.gold
+
+    @property
+    def INCOME(self) -> str:
+        return self.income
+
+    @property
+    def EXPENSE(self) -> str:
+        return self.expense
+
+    @property
+    def WARNING(self) -> str:
+        return self.warning
+
+    @property
+    def NAVY(self) -> str:
+        return self.sidebar_bg
+
+    @property
+    def NAVY_LIGHT(self) -> str:
+        return self.sidebar_active
+
+    @property
+    def NAVY_HOVER(self) -> str:
+        return self.sidebar_hover
+
 
 # Light Palette (Fine Stationery / Private Bank)
 LIGHT_PALETTE = Palette(

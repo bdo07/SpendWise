@@ -260,7 +260,7 @@ class ReportsPage(QWidget):
 
         self.lbl_status = QLabel("")
         self.lbl_status.setFont(ThemeManager.font_sans(size=9))
-        self.lbl_status.setStyleSheet(f"color: {COLORS.GOLD};")
+        self.lbl_status.setStyleSheet(f"color: {ThemeManager.get_palette().gold};")
         self.lbl_status.setVisible(False)
         ac_layout.addWidget(self.lbl_status)
 

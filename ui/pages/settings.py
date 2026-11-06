@@ -128,7 +128,7 @@ class CategoryDialog(QDialog):
             QPushButton {{
                 background-color: {self.selected_color};
                 color: #FFFFFF;
-                border: 1px solid {ThemeManager.get_border_color()};
+                border: 1px solid {ThemeManager.get_palette().border};
                 border-radius: 6px;
                 font-weight: 600;
             }}
@@ -748,16 +748,25 @@ class SettingsPage(QWidget):
             QMessageBox.warning(self, "Import Notice", f"Import finished with notices:\n\n{err_summary}")
 
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
 
         self.setStyleSheet(f"""
             QFrame#Card {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
+
+        # Synchronize theme combobox without re-triggering signal
+        self.combo_theme.blockSignals(True)
+        cur_mode = self.service.get_theme()
+        idx = self.combo_theme.findData(cur_mode)
+        if idx >= 0:
+            self.combo_theme.setCurrentIndex(idx)
+        self.combo_theme.blockSignals(False)
+
+        self.reload_data()
 

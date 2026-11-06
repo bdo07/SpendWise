@@ -6,6 +6,7 @@ Runs in offscreen mode (QT_QPA_PLATFORM=offscreen) to ensure headless CI/test co
 
 import os
 import sys
+from pathlib import Path
 import pytest
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QApplication
@@ -13,8 +14,9 @@ from PySide6.QtWidgets import QApplication
 from core.database import Database
 from core.models import Category, Transaction
 from core.services import FinanceService
+from core.export import PDFReportGenerator, ExcelReportGenerator
 from ui.main_window import MainWindow
-from ui.theme import ThemeManager
+from ui.theme import DARK_PALETTE, LIGHT_PALETTE, ThemeManager
 from ui.widgets.transaction_dialog import TransactionDialog
 
 
@@ -53,6 +55,46 @@ def test_ui_instantiation_and_navigation(qapp, tmp_path):
     assert service.get_currency() == "USD"
 
     # Close cleanly
+    window.close()
+
+
+def test_dark_mode_palette_and_switching(qapp, tmp_path):
+    """Verify dark palette exact color values and live switching."""
+    # Verify dark palette values
+    assert DARK_PALETTE.window_bg == "#0B1220"
+    assert DARK_PALETTE.card_bg == "#141F33"
+    assert DARK_PALETTE.elevated_bg == "#1A2740"
+    assert DARK_PALETTE.sidebar_bg == "#070D18"
+    assert DARK_PALETTE.border == "#243350"
+    assert DARK_PALETTE.text_primary == "#F3EFE6"
+    assert DARK_PALETTE.text_secondary == "#9AA4B5"
+    assert DARK_PALETTE.gold == "#C9A55C"
+    assert DARK_PALETTE.income == "#4CAF86"
+    assert DARK_PALETTE.expense == "#D96B6B"
+
+    test_db = Database(db_path=tmp_path / "test_dark_theme.db")
+    service = FinanceService(database=test_db)
+    window = MainWindow(service=service)
+
+    # Switch to dark mode
+    window._on_theme_changed("dark")
+    assert ThemeManager.is_dark() is True
+    assert ThemeManager.get_palette() == DARK_PALETTE
+
+    # Test sidebar toggle quick button
+    window._toggle_quick_theme()
+    assert ThemeManager.is_dark() is False
+    assert ThemeManager.get_palette() == LIGHT_PALETTE
+
+    window._toggle_quick_theme()
+    assert ThemeManager.is_dark() is True
+
+    # Test icon recoloring
+    sun_icon = ThemeManager.get_icon("sun", DARK_PALETTE.gold)
+    assert sun_icon is not None and not sun_icon.isNull()
+    moon_icon = ThemeManager.get_icon("moon", LIGHT_PALETTE.gold)
+    assert moon_icon is not None and not moon_icon.isNull()
+
     window.close()
 
 
@@ -111,3 +153,25 @@ def test_page_search_and_filters(qapp, tmp_path):
     assert window.page_transactions.table_model.rowCount() == 2
 
     window.close()
+
+
+def test_export_style_integrity_in_dark_mode(tmp_path: Path):
+    """Verify that PDF and Excel exports remain in light/print-friendly style even when app is in dark mode (Rule 9)."""
+    ThemeManager.set_theme("dark")
+    assert ThemeManager.is_dark() is True
+
+    summary = {"income": 10000.0, "expenses": 4000.0, "net_savings": 6000.0, "savings_rate": 60.0}
+    breakdown = [{"category_name": "Food", "amount": 1500.0, "percentage": 37.5}]
+    txs = [Transaction(id=1, type="expense", amount=1500.0, category_id=1, date="2026-10-01", description="Groceries")]
+
+    pdf_out = tmp_path / "dark_test_statement.pdf"
+    gen_pdf = PDFReportGenerator(pdf_out, "Statement", "2026-10", "MAD")
+    gen_pdf.generate(summary, breakdown, txs)
+    assert pdf_out.exists()
+    assert pdf_out.stat().st_size > 1000
+
+    xls_out = tmp_path / "dark_test_statement.xlsx"
+    gen_xls = ExcelReportGenerator(xls_out, "MAD")
+    gen_xls.generate("2026-10", summary, breakdown, txs)
+    assert xls_out.exists()
+    assert xls_out.stat().st_size > 1000

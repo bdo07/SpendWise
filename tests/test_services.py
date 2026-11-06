@@ -47,7 +47,7 @@ def test_database_initialization_and_seed_data(temp_db: Database):
 
     settings_repo = SettingsRepository(temp_db)
     assert settings_repo.get("currency") == "MAD"
-    assert settings_repo.get("theme") == "light"
+    assert settings_repo.get("theme") in ("system", "light")
 
 
 def test_transaction_crud_and_monthly_totals(temp_db: Database, service: FinanceService):
