@@ -95,15 +95,15 @@ class ThemeManager:
     @staticmethod
     def font_serif(size: int = 14, bold: bool = False) -> QFont:
         font = QFont("Georgia")
-        font.setFamilies(["Playfair Display", "Georgia", "Times New Roman", "serif"])
+        font.setFamilies(["Georgia", "Playfair Display", "Times New Roman", "serif"])
         font.setPointSize(size)
         font.setBold(bold)
         return font
 
     @staticmethod
     def font_sans(size: int = 10, bold: bool = False) -> QFont:
-        font = QFont("Inter")
-        font.setFamilies(["Inter", "Segoe UI", "-apple-system", "Helvetica Neue", "sans-serif"])
+        font = QFont()
+        font.setFamilies(["-apple-system", "SF Pro Text", "Helvetica Neue", "Segoe UI", "Inter", "Arial", "sans-serif"])
         font.setPointSize(size)
         font.setBold(bold)
         return font

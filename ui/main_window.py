@@ -308,6 +308,7 @@ class MainWindow(QMainWindow):
 
     def _on_currency_changed(self, currency_code: str) -> None:
         """Update currency throughout the app."""
+        self.service.set_currency(currency_code)
         self._on_global_data_changed()
 
     def _apply_global_theme(self) -> None:

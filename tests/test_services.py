@@ -93,7 +93,6 @@ def test_transaction_crud_and_monthly_totals(temp_db: Database, service: Finance
     assert summary.income == 15000.0
     assert summary.expenses == 2500.0
     assert summary.net_savings == 12500.0
-    # savings rate = (12500 / 15000) * 100 = 83.3%
     assert summary.savings_rate == 83.3
 
 
@@ -172,7 +171,6 @@ def test_recurring_transactions_generation_and_idempotence(temp_db: Database, se
     rent_cat = cat_repo.get_by_name("Rent")
     salary_cat = cat_repo.get_by_name("Salary")
 
-    # Add 2 recurring rules: Rent on 1st, Salary on 28th
     rec_repo.create(Recurring(id=None, type="expense", amount=4500.0, category_id=rent_cat.id, description="Apartment Rent", day_of_month=1, active=1))
     rec_repo.create(Recurring(id=None, type="income", amount=20000.0, category_id=salary_cat.id, description="Base Salary", day_of_month=28, active=1))
 
@@ -199,7 +197,7 @@ def test_csv_import_and_export(temp_db: Database, service: FinanceService, tmp_p
         "Date,Type,Category,Amount,Description\n"
         "2026-10-10,expense,Food,150.50,Dinner with colleagues\n"
         "2026-10-12,income,Freelance,3200.00,Client website contract\n"
-        "2026-10-15,expense,Gym,400.00,Fitness pass\n"  # Brand new category auto-created
+        "2026-10-15,expense,Gym,400.00,Fitness pass\n"
     )
     csv_file.write_text(csv_content, encoding="utf-8")
 
@@ -207,15 +205,12 @@ def test_csv_import_and_export(temp_db: Database, service: FinanceService, tmp_p
     assert imported == 3
     assert len(errors) == 0
 
-    # Verify new category 'Gym' was created
     gym_cat = CategoryRepository(temp_db).get_by_name("Gym")
     assert gym_cat is not None
 
-    # Verify transactions exist
     txs = TransactionRepository(temp_db).get_all(start_date="2026-10-10", end_date="2026-10-15")
     assert len(txs) == 3
 
-    # Export to CSV
     export_file = tmp_path / "export_test.csv"
     service.export_transactions_to_csv(str(export_file), txs)
     assert export_file.exists()
@@ -232,7 +227,6 @@ def test_savings_goals(temp_db: Database):
     assert goal.progress_percentage == 20.0
     assert not goal.is_completed
 
-    # Add 40000
     goal_repo.add_savings(goal.id, 40000.0)
     updated = goal_repo.get_by_id(goal.id)
     assert updated.saved_amount == 50000.0
@@ -254,16 +248,52 @@ def test_pdf_and_excel_export_generation(temp_db: Database, service: FinanceServ
     category_breakdown = service.get_category_breakdown("2026-10")
     txs = tx_repo.get_all()
 
-    # PDF test
     pdf_path = tmp_path / "statement.pdf"
     pdf_gen = PDFReportGenerator(pdf_path, title="Monthly Statement", period="2026-10", currency="MAD")
     pdf_gen.generate(summary, category_breakdown, txs)
     assert pdf_path.exists()
-    assert pdf_path.stat().st_size > 1000  # Generated PDF has reasonable size
+    assert pdf_path.stat().st_size > 1000
 
-    # Excel test
     xls_path = tmp_path / "statement.xlsx"
     xls_gen = ExcelReportGenerator(xls_path, currency="MAD")
     xls_gen.generate("2026-10", summary, category_breakdown, txs)
     assert xls_path.exists()
     assert xls_path.stat().st_size > 1000
+
+
+def test_category_referential_integrity(temp_db: Database):
+    """Test that deleting a category that has transactions is prevented."""
+    cat_repo = CategoryRepository(temp_db)
+    tx_repo = TransactionRepository(temp_db)
+
+    cat = cat_repo.create(Category(id=None, name="TestDelete", type="expense", color="#123456", icon="tag"))
+    assert cat_repo.has_transactions(cat.id) is False
+
+    # Attach transaction
+    tx_repo.create(Transaction(id=None, type="expense", amount=100.0, category_id=cat.id, date="2026-10-01"))
+    assert cat_repo.has_transactions(cat.id) is True
+
+    # Delete should fail gracefully
+    deleted = cat_repo.delete(cat.id)
+    assert deleted is False
+    assert cat_repo.get_by_id(cat.id) is not None
+
+
+def test_budget_copy_from_previous_month(temp_db: Database):
+    """Test copying budgets from one month to another."""
+    budget_repo = BudgetRepository(temp_db)
+    cat_repo = CategoryRepository(temp_db)
+    food_cat = cat_repo.get_by_name("Food")
+
+    # Set up January budgets
+    budget_repo.set_budget(Budget(id=None, month="2026-01", category_id=None, amount=12000.0))
+    budget_repo.set_budget(Budget(id=None, month="2026-01", category_id=food_cat.id, amount=3000.0))
+
+    # Copy to February
+    count = budget_repo.copy_budgets_from_previous_month("2026-01", "2026-02")
+    assert count == 2
+
+    feb_budgets = budget_repo.get_all_for_month("2026-02")
+    assert len(feb_budgets) == 2
+    assert any(b.category_id is None and b.amount == 12000.0 for b in feb_budgets)
+    assert any(b.category_id == food_cat.id and b.amount == 3000.0 for b in feb_budgets)
