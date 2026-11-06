@@ -163,10 +163,11 @@ class TransactionDialog(QDialog):
             self.combo_category.addItem(f"● {cat.name}", cat.id)
 
     def _refresh_type_styles(self) -> None:
+        p = ThemeManager.get_palette()
         if self.btn_expense.isChecked():
             self.btn_expense.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {COLORS.EXPENSE};
+                    background-color: {p.expense};
                     color: #FFFFFF;
                     font-weight: 600;
                     border: none;
@@ -176,15 +177,15 @@ class TransactionDialog(QDialog):
             self.btn_income.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    color: {ThemeManager.get_text_secondary()};
-                    border: 1px solid {ThemeManager.get_border_color()};
+                    color: {p.text_secondary};
+                    border: 1px solid {p.border};
                     border-radius: 6px;
                 }}
             """)
         else:
             self.btn_income.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {COLORS.INCOME};
+                    background-color: {p.income};
                     color: #FFFFFF;
                     font-weight: 600;
                     border: none;
@@ -194,8 +195,8 @@ class TransactionDialog(QDialog):
             self.btn_expense.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    color: {ThemeManager.get_text_secondary()};
-                    border: 1px solid {ThemeManager.get_border_color()};
+                    color: {p.text_secondary};
+                    border: 1px solid {p.border};
                     border-radius: 6px;
                 }}
             """)

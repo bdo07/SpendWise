@@ -1,7 +1,7 @@
 """
 SpendWise StatCard Widget
 Executive metric card for financial KPIs (Balance, Income, Expenses, Savings Rate).
-Features serif typography, clean card container, and subtle drop shadow.
+Features serif typography, clean card container, dynamic role-based color updates, and theme elevation.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from ui.theme import COLORS, ThemeManager
+from ui.theme import ThemeManager
 
 
 class StatCard(QFrame):
@@ -25,6 +25,7 @@ class StatCard(QFrame):
         title: str,
         value: str = "0.00 MAD",
         subtitle: str = "",
+        value_role: str = "primary",  # 'primary', 'income', 'expense', 'gold'
         value_color: Optional[str] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
@@ -33,10 +34,21 @@ class StatCard(QFrame):
         self._title = title
         self._value = value
         self._subtitle = subtitle
-        self._value_color = value_color or ThemeManager.get_text_primary()
+        self._value_role = value_role
+        self._value_color = value_color or self._resolve_color(value_role)
 
         self._setup_ui()
         self.apply_theme()
+
+    def _resolve_color(self, role: str) -> str:
+        p = ThemeManager.get_palette()
+        if role == "income":
+            return p.income
+        elif role == "expense":
+            return p.expense
+        elif role == "gold":
+            return p.gold
+        return p.text_primary
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -46,32 +58,37 @@ class StatCard(QFrame):
         # Title / Label
         self.lbl_title = QLabel(self._title.upper())
         self.lbl_title.setFont(ThemeManager.font_sans(size=9, bold=True))
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_secondary()}; letter-spacing: 0.5px;")
         layout.addWidget(self.lbl_title)
 
         # Big Value (Serif)
         self.lbl_value = QLabel(self._value)
         self.lbl_value.setFont(ThemeManager.font_serif(size=22, bold=True))
-        self.lbl_value.setStyleSheet(f"color: {self._value_color};")
         layout.addWidget(self.lbl_value)
 
         # Subtitle / Trend
         self.lbl_subtitle = QLabel(self._subtitle)
         self.lbl_subtitle.setFont(ThemeManager.font_sans(size=10))
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
         self.lbl_subtitle.setVisible(bool(self._subtitle))
         layout.addWidget(self.lbl_subtitle)
 
-        # Apply soft shadow
-        self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
-
-    def update_data(self, value: str, subtitle: Optional[str] = None, value_color: Optional[str] = None) -> None:
-        """Update value and subtitle."""
+    def update_data(
+        self,
+        value: str,
+        subtitle: Optional[str] = None,
+        value_color: Optional[str] = None,
+        value_role: Optional[str] = None,
+    ) -> None:
+        """Update value, subtitle, and dynamic role."""
         self._value = value
         self.lbl_value.setText(value)
-        if value_color:
+        if value_role:
+            self._value_role = value_role
+            self._value_color = self._resolve_color(value_role)
+            self.lbl_value.setStyleSheet(f"color: {self._value_color};")
+        elif value_color:
             self._value_color = value_color
             self.lbl_value.setStyleSheet(f"color: {value_color};")
+
         if subtitle is not None:
             self._subtitle = subtitle
             self.lbl_subtitle.setText(subtitle)
@@ -79,17 +96,21 @@ class StatCard(QFrame):
 
     def apply_theme(self) -> None:
         """Refresh styling on theme change."""
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
         self.setStyleSheet(f"""
             QFrame#StatCard {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_secondary()}; letter-spacing: 0.5px;")
-        self.lbl_value.setStyleSheet(f"color: {self._value_color};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
-        self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
+        self.lbl_title.setStyleSheet(f"color: {p.text_secondary}; letter-spacing: 0.5px;")
 
+        # Re-resolve color if role was set
+        if self._value_role:
+            self._value_color = self._resolve_color(self._value_role)
+        self.lbl_value.setStyleSheet(f"color: {self._value_color};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
+
+        # Elevation
+        self.setGraphicsEffect(ThemeManager.create_card_shadow(self))

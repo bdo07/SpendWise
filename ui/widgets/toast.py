@@ -1,6 +1,7 @@
 """
 SpendWise Toast Notification Widget
 Displays non-intrusive alert messages for budget warnings, errors, and success confirmations.
+Fully integrated with active palette for dark mode elevated contrast.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from ui.theme import COLORS, ThemeManager
+from ui.theme import ThemeManager
 
 
 class Toast(QFrame):
@@ -41,19 +42,21 @@ class Toast(QFrame):
             QTimer.singleShot(duration_ms, self.fade_out)
 
     def _setup_ui(self, title: str, message: str, level: str) -> None:
+        p = ThemeManager.get_palette()
+
         # Determine accent color and background
         if level in ("critical", "exceeded"):
-            accent = COLORS.EXPENSE
-            bg = COLORS.EXPENSE_LIGHT if not ThemeManager.is_dark() else "#2D1515"
+            accent = p.expense
+            bg = p.expense_surface
         elif level == "warning":
-            accent = COLORS.WARNING
-            bg = COLORS.WARNING_LIGHT if not ThemeManager.is_dark() else "#2B210F"
+            accent = p.warning
+            bg = p.warning_surface
         elif level == "success":
-            accent = COLORS.INCOME
-            bg = COLORS.INCOME_LIGHT if not ThemeManager.is_dark() else "#0F261C"
+            accent = p.income
+            bg = p.income_surface
         else:
-            accent = COLORS.GOLD
-            bg = ThemeManager.get_card_color()
+            accent = p.gold
+            bg = p.elevated_bg
 
         self.setStyleSheet(f"""
             QFrame#ToastWidget {{
@@ -79,7 +82,7 @@ class Toast(QFrame):
 
         lbl_msg = QLabel(message)
         lbl_msg.setFont(ThemeManager.font_sans(size=9))
-        lbl_msg.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
+        lbl_msg.setStyleSheet(f"color: {p.text_primary};")
         lbl_msg.setWordWrap(True)
         content_layout.addWidget(lbl_msg)
 
@@ -88,16 +91,16 @@ class Toast(QFrame):
         # Close button
         btn_close = QPushButton("✕")
         btn_close.setFixedSize(20, 20)
-        btn_close.setStyleSheet("""
-            QPushButton {
+        btn_close.setStyleSheet(f"""
+            QPushButton {{
                 background: transparent;
                 border: none;
                 font-size: 11px;
-                color: #6B7280;
-            }
-            QPushButton:hover {
-                color: #0F1B2D;
-            }
+                color: {p.text_secondary};
+            }}
+            QPushButton:hover {{
+                color: {p.text_primary};
+            }}
         """)
         btn_close.clicked.connect(self.fade_out)
         layout.addWidget(btn_close)
@@ -144,4 +147,3 @@ def show_toast(
     toast.move(x, y)
     toast.show()
     return toast
-

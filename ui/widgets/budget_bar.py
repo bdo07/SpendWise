@@ -4,12 +4,12 @@ Custom progress bar for budget visualization with dynamic color coding:
 - Green: < 70%
 - Amber: 70% - 90%
 - Burgundy/Red: > 90%
-Displays category, spent / total, percentage, and remaining amount.
+Displays category, spent / total, percentage, and remaining amount, fully theme-adaptive.
 """
 
 from __future__ import annotations
 from typing import Optional
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Property
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from ui.theme import COLORS, ThemeManager
+from ui.theme import ThemeManager
 
 
 class BudgetBar(QFrame):
@@ -83,12 +83,13 @@ class BudgetBar(QFrame):
         self.apply_theme()
 
     def update_values(self, category_name: str, spent: float, limit: float, currency: str = "MAD") -> None:
-        """Update metrics and adjust bar color accordingly."""
+        """Update metrics and adjust bar color dynamically per active theme palette."""
         self.category_name = category_name
         self.spent = spent
         self.limit = limit
         self.currency = currency
 
+        p = ThemeManager.get_palette()
         percentage = (spent / limit * 100.0) if limit > 0 else 0.0
         remaining = limit - spent
 
@@ -96,18 +97,18 @@ class BudgetBar(QFrame):
         self.lbl_amounts.setText(f"{spent:,.2f} / {limit:,.2f} {currency}")
         self.lbl_percentage.setText(f"{percentage:.1f}%")
 
-        # Color thresholds: Green < 70%, Amber 70-90%, Burgundy > 90%
+        # Color thresholds: Green < 70%, Amber 70-90%, Red > 90% (adjusted per theme)
         if percentage >= 90.0:
-            fill_color = COLORS.EXPENSE
-            text_color = COLORS.EXPENSE
+            fill_color = p.expense
+            text_color = p.expense
             status_text = f"Exceeded by {abs(remaining):,.2f} {currency}" if remaining < 0 else f"Critical: only {remaining:,.2f} {currency} remaining"
         elif percentage >= 70.0:
-            fill_color = COLORS.WARNING
-            text_color = COLORS.WARNING
+            fill_color = p.warning
+            text_color = p.warning
             status_text = f"Warning: {remaining:,.2f} {currency} remaining"
         else:
-            fill_color = COLORS.INCOME
-            text_color = COLORS.INCOME
+            fill_color = p.income
+            text_color = p.income
             status_text = f"{remaining:,.2f} {currency} remaining"
 
         self.lbl_remaining.setText(status_text)
@@ -117,11 +118,10 @@ class BudgetBar(QFrame):
         # Cap visual progress bar at 100 for geometry
         self.progress_bar.setValue(min(100, int(percentage)))
 
-        # Update bar chunk color
-        border = ThemeManager.get_border_color()
+        # Update bar track and chunk colors
         self.progress_bar.setStyleSheet(f"""
             QProgressBar {{
-                background-color: {border};
+                background-color: {p.border};
                 border: none;
                 border-radius: 4px;
             }}
@@ -132,17 +132,15 @@ class BudgetBar(QFrame):
         """)
 
     def apply_theme(self) -> None:
-        """Refresh container styling."""
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
-        text_primary = ThemeManager.get_text_primary()
+        """Refresh container styling and threshold colors."""
+        p = ThemeManager.get_palette()
         self.setStyleSheet(f"""
             QFrame#BudgetBar {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 8px;
             }}
         """)
-        self.lbl_name.setStyleSheet(f"color: {text_primary};")
-        self.lbl_amounts.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
-
+        self.lbl_name.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_amounts.setStyleSheet(f"color: {p.text_secondary};")
+        self.update_values(self.category_name, self.spent, self.limit, self.currency)

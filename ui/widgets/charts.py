@@ -5,6 +5,8 @@ Includes:
 - CategoryDonutChart: Elegant donut chart with category distribution
 - MonthlyBarChart: Grouped bar chart comparing Income vs Expenses over 12 months
 - CumulativeLineChart: Spline chart showing running net wealth over time
+
+All charts dynamically re-theme their backgrounds, axes, grid lines, labels, legend, and series live.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from PySide6.QtCharts import (
     QValueAxis,
 )
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
-from ui.theme import COLORS, ThemeManager
+from ui.theme import ThemeManager
 
 
 CHART_PALETTE = [
@@ -57,6 +59,8 @@ class CategoryDonutChart(QFrame):
         super().__init__(parent)
         self.is_mini = is_mini
         self.chart_title = title
+        self._last_breakdown: List[Dict[str, Any]] = []
+        self._last_currency: str = "MAD"
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -65,10 +69,11 @@ class CategoryDonutChart(QFrame):
         layout.setSpacing(8)
 
         if not self.is_mini and self.chart_title:
-            lbl_title = QLabel(self.chart_title)
-            lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
-            lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-            layout.addWidget(lbl_title)
+            self.lbl_title = QLabel(self.chart_title)
+            self.lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
+            layout.addWidget(self.lbl_title)
+        else:
+            self.lbl_title = None
 
         self.chart = QChart()
         self.chart.setBackgroundVisible(False)
@@ -78,7 +83,6 @@ class CategoryDonutChart(QFrame):
         # Legend configuration
         legend = self.chart.legend()
         legend.setFont(ThemeManager.font_sans(size=9))
-        legend.setLabelColor(QColor(ThemeManager.get_text_primary()))
         if self.is_mini:
             legend.setAlignment(Qt.AlignBottom)
             legend.setFont(ThemeManager.font_sans(size=8))
@@ -92,19 +96,24 @@ class CategoryDonutChart(QFrame):
 
     def set_data(self, breakdown: List[Dict[str, Any]], currency: str = "MAD") -> None:
         """Populate donut slices."""
+        self._last_breakdown = breakdown
+        self._last_currency = currency
+
+        p = ThemeManager.get_palette()
         self.chart.removeAllSeries()
         series = QPieSeries()
         series.setHoleSize(0.55 if self.is_mini else 0.50)
 
         if not breakdown:
             slice_empty = series.append("No Data", 1.0)
-            slice_empty.setColor(QColor(ThemeManager.get_border_color()))
-            slice_empty.setBorderColor(QColor(ThemeManager.get_border_color()))
+            slice_empty.setColor(QColor(p.border))
+            slice_empty.setBorderColor(QColor(p.border))
             self.chart.addSeries(series)
             self.chart.legend().setVisible(False)
             return
 
         self.chart.legend().setVisible(True)
+        self.chart.legend().setLabelColor(QColor(p.text_primary))
 
         for idx, item in enumerate(breakdown[:8]):  # Top 8
             amt = item["amount"]
@@ -115,7 +124,7 @@ class CategoryDonutChart(QFrame):
             pie_slice = series.append(label, amt)
             color_hex = item.get("color") or CHART_PALETTE[idx % len(CHART_PALETTE)]
             pie_slice.setColor(QColor(color_hex))
-            pie_slice.setBorderColor(QColor(ThemeManager.get_card_color()))
+            pie_slice.setBorderColor(QColor(p.card_bg))
             pie_slice.setBorderWidth(2)
 
             # Highlight slice slightly when hovered
@@ -124,17 +133,23 @@ class CategoryDonutChart(QFrame):
         self.chart.addSeries(series)
 
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        """Update styling and refresh slices border and legend colors live."""
+        p = ThemeManager.get_palette()
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.chart.legend().setLabelColor(QColor(ThemeManager.get_text_primary()))
+        if self.lbl_title:
+            self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.chart.legend().setLabelColor(QColor(p.text_primary))
         self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
+
+        # Re-render slices with new border color if data exists
+        if self._last_breakdown:
+            self.set_data(self._last_breakdown, self._last_currency)
 
 
 class MonthlyBarChart(QFrame):
@@ -143,6 +158,8 @@ class MonthlyBarChart(QFrame):
     def __init__(self, title: str = "Monthly Cash Flow (Income vs Expenses)", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.chart_title = title
+        self._last_history: List[Dict[str, Any]] = []
+        self._last_currency: str = "MAD"
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -150,10 +167,9 @@ class MonthlyBarChart(QFrame):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(8)
 
-        lbl_title = QLabel(self.chart_title)
-        lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
-        lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        layout.addWidget(lbl_title)
+        self.lbl_title = QLabel(self.chart_title)
+        self.lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
+        layout.addWidget(self.lbl_title)
 
         self.chart = QChart()
         self.chart.setBackgroundVisible(False)
@@ -163,7 +179,6 @@ class MonthlyBarChart(QFrame):
         legend = self.chart.legend()
         legend.setAlignment(Qt.AlignTop)
         legend.setFont(ThemeManager.font_sans(size=9))
-        legend.setLabelColor(QColor(ThemeManager.get_text_primary()))
 
         self.chart_view = BaseChartView(self.chart, self)
         layout.addWidget(self.chart_view)
@@ -172,8 +187,11 @@ class MonthlyBarChart(QFrame):
 
     def set_data(self, history: List[Dict[str, Any]], currency: str = "MAD") -> None:
         """Render monthly grouped bars."""
+        self._last_history = history
+        self._last_currency = currency
+
+        p = ThemeManager.get_palette()
         self.chart.removeAllSeries()
-        # Remove old axes
         for ax in self.chart.axes():
             self.chart.removeAxis(ax)
 
@@ -181,12 +199,12 @@ class MonthlyBarChart(QFrame):
             return
 
         set_income = QBarSet("Income")
-        set_income.setColor(QColor(COLORS.INCOME))
-        set_income.setBorderColor(QColor(COLORS.INCOME))
+        set_income.setColor(QColor(p.income))
+        set_income.setBorderColor(QColor(p.income))
 
         set_expense = QBarSet("Expenses")
-        set_expense.setColor(QColor(COLORS.EXPENSE))
-        set_expense.setBorderColor(QColor(COLORS.EXPENSE))
+        set_expense.setColor(QColor(p.expense))
+        set_expense.setBorderColor(QColor(p.expense))
 
         categories = []
         max_val = 1000.0
@@ -209,8 +227,8 @@ class MonthlyBarChart(QFrame):
         axis_x = QBarCategoryAxis()
         axis_x.append(categories)
         axis_x.setLabelsFont(ThemeManager.font_sans(size=8))
-        axis_x.setLabelsColor(QColor(ThemeManager.get_text_secondary()))
-        axis_x.setLinePen(QPen(QColor(ThemeManager.get_border_color())))
+        axis_x.setLabelsColor(QColor(p.text_secondary))
+        axis_x.setLinePen(QPen(QColor(p.border)))
         self.chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
@@ -219,24 +237,30 @@ class MonthlyBarChart(QFrame):
         axis_y.setRange(0, max_val * 1.15)
         axis_y.setLabelFormat("%.0f")
         axis_y.setLabelsFont(ThemeManager.font_sans(size=8))
-        axis_y.setLabelsColor(QColor(ThemeManager.get_text_secondary()))
-        axis_y.setLinePen(QPen(QColor(ThemeManager.get_border_color())))
-        axis_y.setGridLineColor(QColor(ThemeManager.get_border_color()))
+        axis_y.setLabelsColor(QColor(p.text_secondary))
+        axis_y.setLinePen(QPen(QColor(p.border)))
+        axis_y.setGridLineColor(QColor(p.border_subtle))
         self.chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
+        self.chart.legend().setLabelColor(QColor(p.text_primary))
+
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        """Update styling and refresh axes, bars, and labels live."""
+        p = ThemeManager.get_palette()
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.chart.legend().setLabelColor(QColor(ThemeManager.get_text_primary()))
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.chart.legend().setLabelColor(QColor(p.text_primary))
         self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
+
+        if self._last_history:
+            self.set_data(self._last_history, self._last_currency)
 
 
 class CumulativeLineChart(QFrame):
@@ -245,6 +269,8 @@ class CumulativeLineChart(QFrame):
     def __init__(self, title: str = "Cumulative Net Balance", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.chart_title = title
+        self._last_series: List[Dict[str, Any]] = []
+        self._last_currency: str = "MAD"
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -252,10 +278,9 @@ class CumulativeLineChart(QFrame):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(8)
 
-        lbl_title = QLabel(self.chart_title)
-        lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
-        lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        layout.addWidget(lbl_title)
+        self.lbl_title = QLabel(self.chart_title)
+        self.lbl_title.setFont(ThemeManager.font_serif(size=14, bold=True))
+        layout.addWidget(self.lbl_title)
 
         self.chart = QChart()
         self.chart.setBackgroundVisible(False)
@@ -270,6 +295,10 @@ class CumulativeLineChart(QFrame):
 
     def set_data(self, cumulative_series: List[Dict[str, Any]], currency: str = "MAD") -> None:
         """Render cumulative net line."""
+        self._last_series = cumulative_series
+        self._last_currency = currency
+
+        p = ThemeManager.get_palette()
         self.chart.removeAllSeries()
         for ax in self.chart.axes():
             self.chart.removeAxis(ax)
@@ -278,7 +307,7 @@ class CumulativeLineChart(QFrame):
             return
 
         series = QSplineSeries()
-        pen = QPen(QColor(COLORS.GOLD))
+        pen = QPen(QColor(p.gold))
         pen.setWidth(3)
         series.setPen(pen)
 
@@ -299,8 +328,8 @@ class CumulativeLineChart(QFrame):
         axis_x = QBarCategoryAxis()
         axis_x.append(categories)
         axis_x.setLabelsFont(ThemeManager.font_sans(size=8))
-        axis_x.setLabelsColor(QColor(ThemeManager.get_text_secondary()))
-        axis_x.setLinePen(QPen(QColor(ThemeManager.get_border_color())))
+        axis_x.setLabelsColor(QColor(p.text_secondary))
+        axis_x.setLinePen(QPen(QColor(p.border)))
         self.chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
@@ -310,20 +339,24 @@ class CumulativeLineChart(QFrame):
         axis_y.setRange(min_val - margin, max_val + margin)
         axis_y.setLabelFormat("%.0f")
         axis_y.setLabelsFont(ThemeManager.font_sans(size=8))
-        axis_y.setLabelsColor(QColor(ThemeManager.get_text_secondary()))
-        axis_y.setLinePen(QPen(QColor(ThemeManager.get_border_color())))
-        axis_y.setGridLineColor(QColor(ThemeManager.get_border_color()))
+        axis_y.setLabelsColor(QColor(p.text_secondary))
+        axis_y.setLinePen(QPen(QColor(p.border)))
+        axis_y.setGridLineColor(QColor(p.border_subtle))
         self.chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        """Update styling and refresh line curve, axes, and labels live."""
+        p = ThemeManager.get_palette()
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
         self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
+
+        if self._last_series:
+            self.set_data(self._last_series, self._last_currency)

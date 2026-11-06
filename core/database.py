@@ -31,7 +31,7 @@ DEFAULT_CATEGORIES = [
 
 DEFAULT_SETTINGS = {
     "currency": "MAD",
-    "theme": "light",
+    "theme": "system",
     "user_name": "Valued Client",
     "app_version": "1.0.0",
 }

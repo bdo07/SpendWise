@@ -56,8 +56,8 @@ class FinanceService:
         self.settings_repo.set("currency", currency_code.strip().upper())
 
     def get_theme(self) -> str:
-        """Get current theme ('light' or 'dark')."""
-        return self.settings_repo.get("theme", "light")
+        """Get current theme ('system', 'light', or 'dark')."""
+        return self.settings_repo.get("theme", "system")
 
     def set_theme(self, theme_name: str) -> None:
         """Set active theme ('light' or 'dark')."""
