@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases and backups
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Generated export test files
+*.pdf
+*.xlsx
+*.csv
