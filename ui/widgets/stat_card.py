@@ -92,3 +92,4 @@ class StatCard(QFrame):
         self.lbl_value.setStyleSheet(f"color: {self._value_color};")
         self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
         self.setGraphicsEffect(ThemeManager.create_card_shadow(self))
+

@@ -423,3 +423,4 @@ class FinanceService:
                     currency,
                     t.description,
                 ])
+

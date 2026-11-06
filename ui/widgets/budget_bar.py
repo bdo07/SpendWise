@@ -145,3 +145,4 @@ class BudgetBar(QFrame):
         """)
         self.lbl_name.setStyleSheet(f"color: {text_primary};")
         self.lbl_amounts.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+

@@ -248,3 +248,4 @@ class TransactionDialog(QDialog):
             description=desc,
         )
         self.accept()
+

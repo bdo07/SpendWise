@@ -155,3 +155,4 @@ All 10 comprehensive unit and integration tests run in isolated test databases a
 
 ## 🔒 Privacy & Offline Security
 SpendWise stores 100% of user data locally inside an encrypted-ready SQLite database. No external network requests, third-party analytics, or telemetry are transmitted.
+

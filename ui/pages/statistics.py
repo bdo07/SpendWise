@@ -183,3 +183,4 @@ class StatisticsPage(QWidget):
         self.category_chart.apply_theme()
         self.cashflow_chart.apply_theme()
         self.cumulative_chart.apply_theme()
+

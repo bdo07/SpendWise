@@ -455,3 +455,4 @@ class ReportsPage(QWidget):
         self.card_expense.apply_theme()
         self.card_net.apply_theme()
         self.card_tx_count.apply_theme()
+

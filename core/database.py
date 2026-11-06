@@ -203,3 +203,4 @@ class Database:
 
 # Global default instance
 db = Database()
+

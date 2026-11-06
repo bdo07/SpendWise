@@ -455,3 +455,4 @@ class ExcelReportGenerator:
                 sheet.column_dimensions[col_letter].width = max(max_len + 3, 12)
 
         self.wb.save(self.filename)
+

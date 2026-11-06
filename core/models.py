@@ -129,3 +129,4 @@ class MonthlySummary:
     net_savings: float = 0.0
     savings_rate: float = 0.0
     transaction_count: int = 0
+

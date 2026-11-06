@@ -173,3 +173,4 @@ def seed_demo_data(reset: bool = False) -> None:
 
 if __name__ == "__main__":
     seed_demo_data(reset=False)
+

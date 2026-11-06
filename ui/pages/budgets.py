@@ -586,3 +586,4 @@ class BudgetsPage(QWidget):
         """)
         self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
         self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+

@@ -733,3 +733,4 @@ class SettingsRepository:
             cursor = conn.cursor()
             cursor.execute("SELECT key, value FROM settings")
             return {row["key"]: row["value"] for row in cursor.fetchall()}
+
