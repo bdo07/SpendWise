@@ -201,10 +201,10 @@ class ReportsPage(QWidget):
 
         kpi_row = QHBoxLayout()
         kpi_row.setSpacing(16)
-        self.card_income = StatCard("Income Recorded", "0.00 MAD", "Total incoming capital", value_color=COLORS.INCOME)
-        self.card_expense = StatCard("Expenses Incurred", "0.00 MAD", "Total outflow", value_color=COLORS.EXPENSE)
-        self.card_net = StatCard("Net Statement Balance", "0.00 MAD", "Net retained savings")
-        self.card_tx_count = StatCard("Transactions Ledger", "0 items", "Itemized line entries")
+        self.card_income = StatCard("Income Recorded", "0.00 MAD", "Total incoming capital", value_role="income")
+        self.card_expense = StatCard("Expenses Incurred", "0.00 MAD", "Total outflow", value_role="expense")
+        self.card_net = StatCard("Net Statement Balance", "0.00 MAD", "Net retained savings", value_role="primary")
+        self.card_tx_count = StatCard("Transactions Ledger", "0 items", "Itemized line entries", value_role="gold")
 
         kpi_row.addWidget(self.card_income)
         kpi_row.addWidget(self.card_expense)
@@ -319,12 +319,12 @@ class ReportsPage(QWidget):
         expenses = sum(t.amount for t in txs if t.type == "expense")
         net = income - expenses
 
-        self.card_income.update_data(f"+{income:,.2f} {currency}")
-        self.card_expense.update_data(f"-{expenses:,.2f} {currency}")
-        net_col = COLORS.INCOME if net >= 0 else COLORS.EXPENSE
+        self.card_income.update_data(f"+{income:,.2f} {currency}", value_role="income")
+        self.card_expense.update_data(f"-{expenses:,.2f} {currency}", value_role="expense")
+        net_role = "income" if net >= 0 else "expense"
         sign = "+" if net >= 0 else ""
-        self.card_net.update_data(f"{sign}{net:,.2f} {currency}", value_color=net_col)
-        self.card_tx_count.update_data(f"{len(txs)} line items")
+        self.card_net.update_data(f"{sign}{net:,.2f} {currency}", value_role=net_role)
+        self.card_tx_count.update_data(f"{len(txs)} line items", value_role="gold")
 
     def _export_pdf(self) -> None:
         self._start_export("pdf")
@@ -439,18 +439,17 @@ class ReportsPage(QWidget):
         QMessageBox.critical(self, "Export Failed", f"Failed to generate statement:\n{err_msg}")
 
     def apply_theme(self) -> None:
-        card_bg = ThemeManager.get_card_color()
-        border = ThemeManager.get_border_color()
+        p = ThemeManager.get_palette()
 
         self.setStyleSheet(f"""
             QFrame#Card {{
-                background-color: {card_bg};
-                border: 1px solid {border};
+                background-color: {p.card_bg};
+                border: 1px solid {p.border};
                 border-radius: 12px;
             }}
         """)
-        self.lbl_title.setStyleSheet(f"color: {ThemeManager.get_text_primary()};")
-        self.lbl_subtitle.setStyleSheet(f"color: {ThemeManager.get_text_secondary()};")
+        self.lbl_title.setStyleSheet(f"color: {p.text_primary};")
+        self.lbl_subtitle.setStyleSheet(f"color: {p.text_secondary};")
         self.card_income.apply_theme()
         self.card_expense.apply_theme()
         self.card_net.apply_theme()
