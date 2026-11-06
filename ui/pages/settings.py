@@ -523,6 +523,7 @@ class SettingsPage(QWidget):
     def reload_data(self) -> None:
         """Populate category and recurring tables."""
         currency = self.service.get_currency()
+        p = ThemeManager.get_palette()
 
         # Categories
         cats = self.service.cat_repo.get_all()
@@ -534,7 +535,7 @@ class SettingsPage(QWidget):
 
             item_type = QTableWidgetItem(c.type.capitalize())
             item_type.setFont(ThemeManager.font_sans(size=9))
-            item_type.setForeground(QColor(COLORS.INCOME if c.type == "income" else COLORS.EXPENSE))
+            item_type.setForeground(QColor(p.income if c.type == "income" else p.expense))
             self.table_cats.setItem(row, 1, item_type)
 
             # Color pill
@@ -580,7 +581,7 @@ class SettingsPage(QWidget):
             self.table_recs.setItem(row, 1, item_cat)
 
             sign = "+" if r.type == "income" else "-"
-            color = COLORS.INCOME if r.type == "income" else COLORS.EXPENSE
+            color = p.income if r.type == "income" else p.expense
             item_amt = QTableWidgetItem(f"{sign}{r.amount:,.2f} {currency}")
             item_amt.setFont(ThemeManager.font_sans(size=9, bold=True))
             item_amt.setForeground(QColor(color))
@@ -599,6 +600,7 @@ class SettingsPage(QWidget):
             rw_l = QHBoxLayout(rw)
             rw_l.setContentsMargins(4, 2, 4, 2)
             rw_l.addWidget(btn_del_r)
+            self.table_recs.setCellWidget(row, 4, rw)
             self.table_recs.setCellWidget(row, 4, rw)
 
     def _on_currency_changed(self) -> None:
